@@ -1,12 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace TaskLabBackend.Models
+﻿namespace TaskLabBackend.Dto
 {
-    public class Task
+    public class TasksDto
     {
-        [Key]
-        public int Id { get; set; }
-
         public string TaskTitle { get; set; }
 
         public string TaskDescription { get; set; }
@@ -17,10 +12,5 @@ namespace TaskLabBackend.Models
 
         public string TaskRemarks { get; set; }
 
-        public DateTime CreatedOn { get; set; } = DateTime.Now;
-
-
     }
-
-  
 }

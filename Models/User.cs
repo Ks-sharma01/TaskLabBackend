@@ -1,7 +1,10 @@
-﻿namespace TaskLabBackend.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace TaskLabBackend.Models
 {
     public class User
     {
+        [Key]
         public int Id { get; set; }
 
         public string Name { get; set; }

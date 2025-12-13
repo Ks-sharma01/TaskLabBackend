@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaskLabBackend.Db;
+using TaskLabBackend.Dto;
 
 namespace TaskLabBackend.Controllers
 {
@@ -18,6 +19,9 @@ namespace TaskLabBackend.Controllers
         [HttpGet("AllTasks")]
         public async Task<IActionResult> AllTasks()
         {
+            try
+            {
+
             var allTasks = await _context.Tasks.ToListAsync(); 
             if (allTasks.Any())
             {
@@ -28,12 +32,35 @@ namespace TaskLabBackend.Controllers
             {
                 return Ok(new { message = "No Task Found" });
             }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message.ToString(), ex);
+            }
         }
 
         [HttpPost("AddTask")]
-        public async Task<IActionResult> AddTask()
+        public async Task<IActionResult> AddTask(TasksDto tasksDto)
         {
+            try
+            {
 
+            var Tasks = new Models.Task()
+            {
+                TaskTitle = tasksDto.TaskTitle,
+                TaskDescription = tasksDto.TaskDescription,
+                TaskStatus = tasksDto.TaskStatus,
+                TaskRemarks = tasksDto.TaskRemarks,
+                TaskDueDate = tasksDto.TaskDueDate,
+            };
+            _context.Tasks.Add(Tasks);
+            await _context.SaveChangesAsync();
+                return Ok(Tasks);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message.ToString(), ex);
+            }
         }
     }
 }
