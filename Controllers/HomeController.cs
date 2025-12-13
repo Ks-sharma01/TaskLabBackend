@@ -112,5 +112,30 @@ namespace TaskLabBackend.Controllers
                 throw new Exception (ex.Message.ToString());
             }
         }
+
+        [HttpDelete("DeleteTask/{id}")]
+        public async Task<IActionResult> DeleteTask(int id)
+        {
+            try
+            {
+
+                var task = await _context.Tasks.Where(p =>p.Id == id).FirstOrDefaultAsync();
+                if (task != null)
+                {
+                    _context.Tasks.Remove(task);
+                    await _context.SaveChangesAsync();
+                    return Ok(new { message = "Task Deleted" });
+                }
+                else
+                {
+                    return NotFound(new { message = "Task Not Found" });
+                }
+            }
+            catch(Exception ex)
+            {
+                throw new Exception (ex.Message.ToString());
+            }
+
+        }
     }
 }
