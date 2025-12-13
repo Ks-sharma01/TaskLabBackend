@@ -30,7 +30,7 @@ namespace TaskLabBackend.Controllers
             }
             else
             {
-                return Ok(new { message = "No Task Found" });
+                return NotFound(new { message = "No Task Found" });
             }
             }
             catch (Exception ex)
@@ -53,9 +53,31 @@ namespace TaskLabBackend.Controllers
                 TaskRemarks = tasksDto.TaskRemarks,
                 TaskDueDate = tasksDto.TaskDueDate,
             };
-            _context.Tasks.Add(Tasks);
-            await _context.SaveChangesAsync();
+                _context.Tasks.Add(Tasks);
+                await _context.SaveChangesAsync();
                 return Ok(Tasks);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message.ToString(), ex);
+            }
+        }
+
+        [HttpGet("TaskById/{id}")]
+        public async Task<IActionResult> GetTaskById(int id)
+        {
+            try
+            {
+                var task = await _context.Tasks.Where(p => p.Id == id).ToListAsync();
+                if(task.Count > 0)
+                {
+                    return Ok(task);
+                }
+                else
+                {
+                    return NotFound(new { message = "Task Not Found" });
+                }
+
             }
             catch (Exception ex)
             {
