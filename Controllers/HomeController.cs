@@ -35,7 +35,7 @@ namespace TaskLabBackend.Controllers
             }
             catch (Exception ex)
             {
-                throw new Exception(ex.Message.ToString(), ex);
+                throw new Exception(ex.Message.ToString());
             }
         }
 
@@ -59,7 +59,7 @@ namespace TaskLabBackend.Controllers
             }
             catch (Exception ex)
             {
-                throw new Exception(ex.Message.ToString(), ex);
+                throw new Exception(ex.Message.ToString());
             }
         }
 
@@ -69,7 +69,7 @@ namespace TaskLabBackend.Controllers
             try
             {
                 var task = await _context.Tasks.Where(p => p.Id == id).ToListAsync();
-                if(task.Count > 0)
+                if(task != null)
                 {
                     return Ok(task);
                 }
@@ -81,7 +81,35 @@ namespace TaskLabBackend.Controllers
             }
             catch (Exception ex)
             {
-                throw new Exception(ex.Message.ToString(), ex);
+                throw new Exception(ex.Message.ToString());
+            }
+        }
+
+        [HttpPut("UpdateTask/{id}")]
+        public async Task<IActionResult> UpdateTask(int id, UpdateTaskDto updateTask)
+        {
+            try
+            {
+                var task = await _context.Tasks.Where(p => p.Id == id).FirstOrDefaultAsync();
+                if (task != null)
+                {
+                    task.TaskTitle = updateTask.TaskTitle;
+                    task.TaskDescription = updateTask.TaskDescription;
+                    task.TaskStatus = updateTask.TaskStatus;
+                    task.TaskDueDate = updateTask.TaskDueDate;
+                    task.TaskRemarks = updateTask.TaskRemarks;
+
+                    await _context.SaveChangesAsync();
+                    return Ok(task);
+                }
+                else
+                {
+                    return NotFound(new { message = "Task Not Found" });
+                }
+            }
+            catch(Exception ex)
+            {
+                throw new Exception (ex.Message.ToString());
             }
         }
     }
