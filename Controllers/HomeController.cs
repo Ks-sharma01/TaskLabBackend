@@ -18,31 +18,26 @@ namespace TaskLabBackend.Controllers
             _context = applicationDbContext;
         }
 
+        [AllowAnonymous]
         [HttpGet("AllTasks")]
         public async Task<IActionResult> AllTasks()
         {
             try
             {
+                var allTasks = await _context.Tasks.ToListAsync();
 
-            var allTasks = await _context.Tasks.ToListAsync(); 
-            if (allTasks.Any())
-            {
-                  return Ok(allTasks);
+                return Ok(allTasks);
 
-            }
-            else
-            {
-                return NotFound(new { message = "No Task Found" });
-            }
             }
             catch (Exception ex)
             {
                 throw new Exception(ex.Message.ToString());
             }
+            
         }
 
         [HttpPost("AddTask")]
-        public async Task<IActionResult> AddTask(TasksDto tasksDto)
+        public async Task<IActionResult> AddTask([FromBody] TasksDto tasksDto)
         {
             try
             {
@@ -65,7 +60,7 @@ namespace TaskLabBackend.Controllers
             }
         }
 
-        [HttpGet("TaskById/{id}")]
+        [HttpPost("TaskById/{id}")]
         public async Task<IActionResult> GetTaskById(int id)
         {
             try

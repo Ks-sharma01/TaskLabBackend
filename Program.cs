@@ -36,6 +36,9 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
     };
 });
+
+
+
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<JwtConfigure>();
 var app = builder.Build();
@@ -46,7 +49,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+app.UseCors(options =>
+{
+    options.AllowAnyHeader();
+    options.AllowAnyMethod();
+    options.AllowAnyOrigin();
+});
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();

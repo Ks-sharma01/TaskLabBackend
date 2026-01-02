@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TaskLabBackend.Models;
+using TaskLabBackend.Models.Api;
 
 namespace TaskLabBackend.Db
 {
@@ -10,6 +11,8 @@ namespace TaskLabBackend.Db
         public DbSet<User> Users { get; set; }
 
         public DbSet<Models.Task> Tasks { get; set; }
+
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
     }
     
 

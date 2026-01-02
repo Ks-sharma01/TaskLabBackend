@@ -3,8 +3,10 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using TaskLabBackend.Db;
+using TaskLabBackend.Models;
 using TaskLabBackend.Models.Api;
 
 namespace TaskLabBackend.Services
@@ -19,43 +21,58 @@ namespace TaskLabBackend.Services
             _configuration = configuration;
         }
 
-    public async Task<LoginResponseModel?> Authenticate (LoginRequestModel loginRequest)
+        public async Task<LoginResponseModel?> Authenticate(LoginRequestModel loginRequest)
         {
-            if(string.IsNullOrWhiteSpace(loginRequest.UserName) ||  string.IsNullOrWhiteSpace(loginRequest.Password)) return null;
+            if (string.IsNullOrWhiteSpace(loginRequest.Email) || string.IsNullOrWhiteSpace(loginRequest.Password)) return null;
 
-            var userAccount = await _context.Users.FirstOrDefaultAsync(x => x.Name == loginRequest.UserName && x.Password == loginRequest.Password);
-            if(userAccount == null) return null;
+            var userAccount = await _context.Users.FirstOrDefaultAsync(x => x.Email == loginRequest.Email && x.Password == loginRequest.Password);
+            if (userAccount == null) return null;
 
+            var accesstoken = GenerateAccessToken(userAccount);
+
+            return new LoginResponseModel
+            {
+                Id = userAccount.Id,
+                AccessToken = accesstoken,
+                UserName = userAccount.Name,
+                ExpiresInMin = 30
+            };
+
+        }
+
+        public string GenerateAccessToken(User user)
+        {
             var issuer = _configuration["JwtConfig:Issuer"];
             var audience = _configuration["JwtConfig:Audience"];
             var key = _configuration["JwtConfig:Key"];
             var tokenValidityMins = _configuration.GetValue<int>("JwtConfig:TokenValidityMins");
-            var tokenExpiryTimeStamp = DateTime.UtcNow.AddMinutes(tokenValidityMins);
+
+
+            var claims = new List<Claim>()
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Name, user.Name)
+            };
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[]
-                {
-                    new Claim(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Name, loginRequest.UserName)
-                }),
+                Subject = new ClaimsIdentity(claims),
                 Issuer = issuer,
                 Audience = audience,
-                Expires = tokenExpiryTimeStamp,
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.ASCII.GetBytes(key)),
-                    SecurityAlgorithms.HmacSha512Signature),
+                Expires = DateTime.UtcNow.AddMinutes(tokenValidityMins),
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+                    SecurityAlgorithms.HmacSha256)
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();
-            var securityToken = tokenHandler.CreateToken(tokenDescriptor);
-            var accesstoken = tokenHandler.WriteToken(securityToken);
+            return tokenHandler.WriteToken(tokenHandler.CreateToken(tokenDescriptor));
+        }
 
-            return new LoginResponseModel
-            {
-                AccessToken = accesstoken,
-                UserName = loginRequest.UserName,
-                ExpiresIn = (int)tokenExpiryTimeStamp.Subtract(DateTime.UtcNow).TotalSeconds
-            };
-            
+        public string GenerateRefreshToken()
+        {
+            return Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
         }
     }
 }
