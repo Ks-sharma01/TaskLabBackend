@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaskLabBackend.Db;
 using TaskLabBackend.Dto;
+using TaskLabBackend.Repositories;
 
 namespace TaskLabBackend.Controllers
 {
@@ -12,21 +13,20 @@ namespace TaskLabBackend.Controllers
     [Authorize]
     public class HomeController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
-        public HomeController(ApplicationDbContext applicationDbContext)
+        private readonly ITaskRepository _taskRepository;
+
+        public HomeController(ITaskRepository taskRepository)
         {
-            _context = applicationDbContext;
+            _taskRepository = taskRepository;
         }
 
-        [AllowAnonymous]
         [HttpGet("AllTasks")]
-        public async Task<IActionResult> AllTasks()
+        public async Task<IActionResult> GetAllTasks()
         {
             try
             {
-                var allTasks = await _context.Tasks.ToListAsync();
-
-                return Ok(allTasks);
+               var task =  await _taskRepository.GetAllTasks();
+               return Ok(task);
 
             }
             catch (Exception ex)
@@ -37,22 +37,12 @@ namespace TaskLabBackend.Controllers
         }
 
         [HttpPost("AddTask")]
-        public async Task<IActionResult> AddTask([FromBody] TasksDto tasksDto)
+        public  IActionResult AddTask([FromBody] TasksDto tasksDto)
         {
             try
             {
-
-            var Tasks = new Models.Task()
-            {
-                TaskTitle = tasksDto.TaskTitle,
-                TaskDescription = tasksDto.TaskDescription,
-                TaskStatus = tasksDto.TaskStatus,
-                TaskRemarks = tasksDto.TaskRemarks,
-                TaskDueDate = tasksDto.TaskDueDate,
-            };
-                _context.Tasks.Add(Tasks);
-                await _context.SaveChangesAsync();
-                return Ok(Tasks);
+                var task = _taskRepository.AddTask(tasksDto);
+                return Ok(task);
             }
             catch (Exception ex)
             {
@@ -60,20 +50,28 @@ namespace TaskLabBackend.Controllers
             }
         }
 
-        [HttpPost("TaskById/{id}")]
+        [HttpGet("SearchTask")]
+        public async Task<IActionResult> SearchTask(string keyword)
+        {
+            try
+            {
+              var task=  await _taskRepository.SearchTask(keyword);
+                return Ok(task);
+
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message.ToString());
+            }
+        }
+
+        [HttpGet("TaskById/{id}")]
         public async Task<IActionResult> GetTaskById(int id)
         {
             try
             {
-                var task = await _context.Tasks.Where(p => p.Id == id).ToListAsync();
-                if(task != null)
-                {
-                    return Ok(task);
-                }
-                else
-                {
-                    return NotFound(new { message = "Task Not Found" });
-                }
+               var task = await _taskRepository.GetTaskById(id);
+                return Ok(task);
 
             }
             catch (Exception ex)
@@ -87,22 +85,8 @@ namespace TaskLabBackend.Controllers
         {
             try
             {
-                var task = await _context.Tasks.Where(p => p.Id == id).FirstOrDefaultAsync();
-                if (task != null)
-                {
-                    task.TaskTitle = updateTask.TaskTitle;
-                    task.TaskDescription = updateTask.TaskDescription;
-                    task.TaskStatus = updateTask.TaskStatus;
-                    task.TaskDueDate = updateTask.TaskDueDate;
-                    task.TaskRemarks = updateTask.TaskRemarks;
-
-                    await _context.SaveChangesAsync();
-                    return Ok(task);
-                }
-                else
-                {
-                    return NotFound(new { message = "Task Not Found" });
-                }
+                var task = await _taskRepository.UpdateTask( id, updateTask);
+                return Ok(task);
             }
             catch(Exception ex)
             {
@@ -116,17 +100,8 @@ namespace TaskLabBackend.Controllers
             try
             {
 
-                var task = await _context.Tasks.Where(p =>p.Id == id).FirstOrDefaultAsync();
-                if (task != null)
-                {
-                    _context.Tasks.Remove(task);
-                    await _context.SaveChangesAsync();
-                    return Ok(new { message = "Task Deleted" });
-                }
-                else
-                {
-                    return NotFound(new { message = "Task Not Found" });
-                }
+               var task = await _taskRepository.DeleteTask(id);
+                return Ok(task);
             }
             catch(Exception ex)
             {
