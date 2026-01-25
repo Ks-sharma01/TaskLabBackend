@@ -48,15 +48,15 @@ namespace TaskLabBackend.Repositories
            
         }
 
-        public async Task<Models.Task> UpdateTask(Models.Task task)
+        public async Task<Models.Task> UpdateTask(int id, UpdateTaskDto updateTask)
         {
             var Task = new Models.Task
             {
-                TaskTitle = task.TaskTitle,
-                TaskDescription = task.TaskDescription,
-                TaskDueDate = task.TaskDueDate,
-                TaskStatus = task.TaskStatus,
-                TaskRemarks = task.TaskRemarks,
+                TaskTitle = updateTask.TaskTitle,
+                TaskDescription = updateTask.TaskDescription,
+                TaskDueDate = updateTask.TaskDueDate,
+                TaskStatus = updateTask.TaskStatus,
+                TaskRemarks = updateTask.TaskRemarks,
             };
             _context.Tasks.Update(Task);
            await _context.SaveChangesAsync();

@@ -13,6 +13,8 @@ namespace TaskLabBackend.Db
         public DbSet<Models.Task> Tasks { get; set; }
 
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+
+        public DbSet<OtpRequest> OtpRequests { get; set; }
     }
     
 

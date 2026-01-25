@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -18,19 +19,26 @@ namespace TaskLabBackend.Controllers
         private readonly JwtConfigure jwtConfigure;
         private readonly ApplicationDbContext context;
         private readonly IConfiguration _configuration;
+        private readonly IOtpService _otpService;
+        private readonly IEmailService _emailService;
 
 
-        public AccountController(JwtConfigure jwtConfigure, ApplicationDbContext context, IConfiguration configuration)
+        public AccountController(JwtConfigure jwtConfigure, ApplicationDbContext context, IConfiguration configuration, IOtpService otpService, IEmailService emailService)
         {
             this.jwtConfigure = jwtConfigure;
             this.context = context;
             this._configuration = configuration;
+            this._otpService = otpService;
+            this._emailService = emailService;
         }
 
         [AllowAnonymous]
-        [HttpPost("Login")]
+        [HttpPost("login")]
         public async Task<ActionResult<LoginResponseModel>> Login(LoginRequestModel loginRequest)
         {
+            var user = await context.Users.FirstOrDefaultAsync(x => x.Email == loginRequest.Email);
+            if (user == null) return BadRequest("User not found");
+
             var result = await jwtConfigure.Authenticate(loginRequest);
             var refreshToken = jwtConfigure.GenerateRefreshToken();
 
@@ -58,13 +66,24 @@ namespace TaskLabBackend.Controllers
         }
 
         [HttpPost("Register")]
-        public async Task<IActionResult> Register(RegisterDto registerDto)
+        public async Task<IActionResult> Register(RegisterDto registerDto, string otp)
         {
             var user = await context.Users.FirstOrDefaultAsync(p => p.Email == registerDto.Email);
             if (user != null)
             {
                 return BadRequest(new { message = "Already Registered" });
             }
+
+            var otpEntry = await context.OtpRequests.Where(x => x.UserId == user.Id && !x.IsUsed)
+                .OrderByDescending(x => x.CreatedAt).FirstOrDefaultAsync();
+
+            if (otpEntry == null || otpEntry.ExpiryTime < DateTime.UtcNow) return BadRequest("OTP Expired");
+
+            if (!_otpService.VerifyOtp(otp, otpEntry.OtpHash)) return BadRequest("Invalid OTP");
+
+            otpEntry.IsUsed = true;
+
+            await context.SaveChangesAsync();
 
             var newUser = new User
             {
@@ -110,5 +129,51 @@ namespace TaskLabBackend.Controllers
                 RefreshToken = newRefreshToken,
             });
         }
+
+        [AllowAnonymous]
+        [HttpPost("send-otp")]
+        public async Task<IActionResult> SendOtp([FromBody] string email)
+        {
+            var user = await context.Users.FirstOrDefaultAsync(x => x.Email == email);
+            if (user == null) return BadRequest("User not found");
+
+            var otp = _otpService.GenerateOtp();
+
+            var optEntry = new OtpRequest
+            {
+                UserId = user.Id,
+                OtpHash = _otpService.HashOtp(otp),
+                ExpiryTime = DateTime.UtcNow.AddMinutes(5),
+                IsUsed = false,
+                CreatedAt = DateTime.UtcNow,
+
+            };
+            context.OtpRequests.Add(optEntry);
+            await context.SaveChangesAsync();
+            await _emailService.SendOtpEmailAsync(user.Email, otp);
+            return Ok(new { otp = $"OTP Sent to {user.Email}" });
+        }
+
+        [HttpPost("verify-otp")]
+        public async Task<IActionResult> VerifyOtp(string Email, string otp)
+        {
+            var user = await context.Users.FirstOrDefaultAsync(p => p.Email == Email);
+            if (user == null) return BadRequest("Invalid Email");
+
+
+            var otpEntry = await context.OtpRequests.Where(x => x.UserId == user.Id && !x.IsUsed)
+                .OrderByDescending(x => x.CreatedAt).FirstOrDefaultAsync();
+
+            if (otpEntry == null || otpEntry.ExpiryTime < DateTime.UtcNow) return BadRequest("OTP Expired");
+
+            if (!_otpService.VerifyOtp(otp, otpEntry.OtpHash)) return BadRequest("Invalid OTP");
+
+            otpEntry.IsUsed = true;
+
+            await context.SaveChangesAsync();
+
+            return Ok("Otp Verified");
+        }
+
     }
 }
