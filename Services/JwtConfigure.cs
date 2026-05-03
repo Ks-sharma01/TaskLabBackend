@@ -21,11 +21,11 @@ namespace TaskLabBackend.Services
             _configuration = configuration;
         }
 
-        public async Task<LoginResponseModel?> Authenticate(LoginRequestModel loginRequest)
+        public async Task<LoginResponseModel?> Authenticate(string email, string password)
         {
-            if (string.IsNullOrWhiteSpace(loginRequest.Email) || string.IsNullOrWhiteSpace(loginRequest.Password)) return null;
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password)) return null;
 
-            var userAccount = await _context.Users.FirstOrDefaultAsync(x => x.Email == loginRequest.Email && x.Password == loginRequest.Password);
+            var userAccount = await _context.Users.FirstOrDefaultAsync(x => x.Email == email && x.Password == password);
             if (userAccount == null) return null;
 
             var accesstoken = GenerateAccessToken(userAccount);

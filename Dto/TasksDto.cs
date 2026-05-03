@@ -6,7 +6,7 @@
 
         public string TaskDescription { get; set; }
 
-        public DateOnly TaskDueDate { get; set; }
+        public DateTime? TaskDueDate { get; set; }
 
         public string TaskStatus { get; set; }
 

@@ -46,7 +46,10 @@ namespace TaskLabBackend.Controllers
             }
             catch (Exception ex)
             {
-                throw new Exception(ex.Message.ToString());
+                return StatusCode(500, new
+                {
+                    message = ex.Message
+                }); 
             }
         }
 
@@ -109,5 +112,7 @@ namespace TaskLabBackend.Controllers
             }
 
         }
+
+        
     }
 }

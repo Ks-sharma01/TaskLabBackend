@@ -30,6 +30,7 @@ namespace TaskLabBackend.Repositories
                 TaskDueDate = tasksDto.TaskDueDate,
                 TaskStatus = tasksDto.TaskStatus,
                 TaskRemarks = tasksDto.TaskRemarks,
+                TeamMember = 
             };
             _context.Tasks.Add(Task);
            await _context.SaveChangesAsync();

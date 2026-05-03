@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Google.Apis.Auth;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
@@ -34,39 +35,18 @@ namespace TaskLabBackend.Controllers
 
         [AllowAnonymous]
         [HttpPost("login")]
-        public async Task<ActionResult<LoginResponseModel>> Login(LoginRequestModel loginRequest)
+        public async Task<ActionResult<LoginResponseModel>> Login([FromBody] LoginRequestModel loginRequest)
         {
-            var user = await context.Users.FirstOrDefaultAsync(x => x.Email == loginRequest.Email);
+            var user = await context.Users.FirstOrDefaultAsync(x => x.Email == loginRequest.Email && x.Password == loginRequest.Password);
             if (user == null) return BadRequest("User not found");
 
-            var result = await jwtConfigure.Authenticate(loginRequest);
-            var refreshToken = jwtConfigure.GenerateRefreshToken();
+            var result = await jwtConfigure.Authenticate(user.Email, user.Password);
 
-            context.RefreshTokens.Add(
-                new RefreshToken
-                {
-                    Token = refreshToken,
-                    UserId = Convert.ToString(result.Id),
-                    ExpiryDate = DateTime.UtcNow.AddDays(
-                        Convert.ToDouble(_configuration["JwtConfig:RefreshTokenDays"]))
-                }
-            );
-
-            await context.SaveChangesAsync();
-
-           if (result == null || refreshToken == null)
-            {
-                return Unauthorized();
-            }
-           return Ok(new
-           {
-               result,
-               refreshToken
-           });
+            return Ok(user);
         }
 
         [HttpPost("Register")]
-        public async Task<IActionResult> Register(RegisterDto registerDto, string otp)
+        public async Task<IActionResult> Register(RegisterDto registerDto)
         {
             var user = await context.Users.FirstOrDefaultAsync(p => p.Email == registerDto.Email);
             if (user != null)
@@ -74,22 +54,13 @@ namespace TaskLabBackend.Controllers
                 return BadRequest(new { message = "Already Registered" });
             }
 
-            var otpEntry = await context.OtpRequests.Where(x => x.UserId == user.Id && !x.IsUsed)
-                .OrderByDescending(x => x.CreatedAt).FirstOrDefaultAsync();
-
-            if (otpEntry == null || otpEntry.ExpiryTime < DateTime.UtcNow) return BadRequest("OTP Expired");
-
-            if (!_otpService.VerifyOtp(otp, otpEntry.OtpHash)) return BadRequest("Invalid OTP");
-
-            otpEntry.IsUsed = true;
-
-            await context.SaveChangesAsync();
 
             var newUser = new User
             {
                 Name = registerDto.Name,
                 Email = registerDto.Email,
                 Password = registerDto.Password,
+                CreatedAt = DateTime.UtcNow,
             };
 
             context.Add(newUser);
@@ -132,11 +103,16 @@ namespace TaskLabBackend.Controllers
 
         [AllowAnonymous]
         [HttpPost("send-otp")]
-        public async Task<IActionResult> SendOtp([FromBody] string email)
+        public async Task<IActionResult> SendOtp([FromBody] SendOtpRequest request)
         {
-            var user = await context.Users.FirstOrDefaultAsync(x => x.Email == email);
-            if (user == null) return BadRequest("User not found");
+            var user = await context.Users.FirstOrDefaultAsync(x => x.Email == request.Email);
+                if (user == null) return BadRequest("User not found");
 
+            var existingOtp = context.OtpRequests.Where(x => x.UserId == user.Id && !x.IsUsed);
+            foreach(var item in existingOtp)
+            {
+                item.IsUsed = true;
+            }
             var otp = _otpService.GenerateOtp();
 
             var optEntry = new OtpRequest
@@ -150,30 +126,59 @@ namespace TaskLabBackend.Controllers
             };
             context.OtpRequests.Add(optEntry);
             await context.SaveChangesAsync();
-            await _emailService.SendOtpEmailAsync(user.Email, otp);
-            return Ok(new { otp = $"OTP Sent to {user.Email}" });
+            try
+            {
+               await _emailService.SendOtpEmailAsync(user.Email, otp);
+
+            }
+            catch
+            {
+                return StatusCode(500, "Failed to send OTP email");
+            }
+            return Ok(new { msg= $"OTP Sent to {user.Email}" });
         }
 
         [HttpPost("verify-otp")]
-        public async Task<IActionResult> VerifyOtp(string Email, string otp)
+        public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpDto verifyOtpDto)
         {
-            var user = await context.Users.FirstOrDefaultAsync(p => p.Email == Email);
+            var user = await context.Users.FirstOrDefaultAsync(p => p.Email == verifyOtpDto.Email);
             if (user == null) return BadRequest("Invalid Email");
 
+                
 
             var otpEntry = await context.OtpRequests.Where(x => x.UserId == user.Id && !x.IsUsed)
                 .OrderByDescending(x => x.CreatedAt).FirstOrDefaultAsync();
 
-            if (otpEntry == null || otpEntry.ExpiryTime < DateTime.UtcNow) return BadRequest("OTP Expired");
+            if (otpEntry == null || otpEntry.ExpiryTime < DateTime.UtcNow) return BadRequest(new { msg= "OTP Expired"});
 
-            if (!_otpService.VerifyOtp(otp, otpEntry.OtpHash)) return BadRequest("Invalid OTP");
+            if (!_otpService.VerifyOtp(verifyOtpDto.Otp, otpEntry.OtpHash)) return BadRequest(new { msg = "Invalid OTP" });
 
             otpEntry.IsUsed = true;
 
             await context.SaveChangesAsync();
+            var result = await jwtConfigure.Authenticate(user.Email, user.Password);
 
-            return Ok("Otp Verified");
+
+            return Ok(new { msg = "Otp Verified", token= result.AccessToken});
         }
+
+        //public async Task<IActionResult> GoogleSignup([FromBody] GoogleSignupDto googleSignupDto)
+        //{
+        //    var payload = await GoogleJsonWebSignature.ValidateAsync(googleSignupDto.IdToken);
+        //    var existingUser = await context.Users.FirstOrDefaultAsync(x => x.Email == payload.Email);
+
+        //    if (existingUser != null)
+        //    {
+        //        return BadRequest("User already exists. Please login.");
+        //    }
+        //    var user = new User
+        //    {
+        //        Name = payload.Name,
+        //        Email = payload.Email,
+        //        Provider = "Google",
+        //        IsEmailVerified = true
+        //    }
+        //}
 
     }
 }

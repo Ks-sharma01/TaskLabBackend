@@ -12,8 +12,8 @@ using TaskLabBackend.Db;
 namespace TaskLabBackend.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260124144524_otpRequests_tbl_created1")]
-    partial class otpRequests_tbl_created1
+    [Migration("20260427044542_TaskModelChange")]
+    partial class TaskModelChange
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -96,8 +96,9 @@ namespace TaskLabBackend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateOnly>("TaskDueDate")
-                        .HasColumnType("date");
+                    b.Property<DateTime?>("TaskDueDate")
+                        .IsRequired()
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("TaskRemarks")
                         .HasColumnType("nvarchar(max)");
@@ -123,9 +124,15 @@ namespace TaskLabBackend.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsEmailVerified")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -133,6 +140,9 @@ namespace TaskLabBackend.Migrations
 
                     b.Property<string>("Password")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Provider")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");

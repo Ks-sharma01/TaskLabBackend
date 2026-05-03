@@ -19,6 +19,7 @@ namespace TaskLabBackend.Services
                 Host = _configuration["EmailSettings:SmtpServer"],
                 Port = Convert.ToInt32(_configuration["EmailSettings:Port"]),
                 EnableSsl = true,
+                UseDefaultCredentials= false,
                 Credentials = new NetworkCredential(
                     _configuration["EmailSettings:Username"],
                     _configuration["EmailSettings:Password"]

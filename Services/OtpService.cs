@@ -17,7 +17,7 @@ namespace TaskLabBackend.Services
             return Convert.ToBase64String(
                 sha.ComputeHash(Encoding.UTF8.GetBytes(otp))
                 );
-        }
+        }   
 
         public bool VerifyOtp(string otp,  string hash)
         {

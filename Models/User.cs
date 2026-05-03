@@ -12,5 +12,11 @@ namespace TaskLabBackend.Models
         public string Email { get; set; }
 
         public string Password { get; set; }
+
+        public string? Provider { get; set; } = null;
+
+        public bool IsEmailVerified { get; set; } = false;
+
+        public DateTime CreatedAt { get; set; }
     }
 }

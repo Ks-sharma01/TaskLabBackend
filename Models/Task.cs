@@ -14,12 +14,14 @@ namespace TaskLabBackend.Models
         public string TaskDescription { get; set; }
 
         [Required]
-        public DateOnly TaskDueDate { get; set; }
+        public DateTime? TaskDueDate { get; set; }
 
         [Required]
         public string TaskStatus { get; set; }
 
         public string? TaskRemarks { get; set; }
+
+       
 
         public DateTime CreatedOn { get; set; } = DateTime.Now;
 

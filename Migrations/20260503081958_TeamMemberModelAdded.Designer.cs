@@ -12,8 +12,8 @@ using TaskLabBackend.Db;
 namespace TaskLabBackend.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260124143954_otpRequests_tbl_created")]
-    partial class otpRequests_tbl_created
+    [Migration("20260503081958_TeamMemberModelAdded")]
+    partial class TeamMemberModelAdded
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -96,8 +96,9 @@ namespace TaskLabBackend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateOnly>("TaskDueDate")
-                        .HasColumnType("date");
+                    b.Property<DateTime?>("TaskDueDate")
+                        .IsRequired()
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("TaskRemarks")
                         .HasColumnType("nvarchar(max)");
@@ -115,7 +116,7 @@ namespace TaskLabBackend.Migrations
                     b.ToTable("Tasks");
                 });
 
-            modelBuilder.Entity("TaskLabBackend.Models.User", b =>
+            modelBuilder.Entity("TaskLabBackend.Models.TeamMember", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -127,6 +128,45 @@ namespace TaskLabBackend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<decimal>("ExperienceInYears")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserID")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserID");
+
+                    b.ToTable("TeamMembers");
+                });
+
+            modelBuilder.Entity("TaskLabBackend.Models.User", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsEmailVerified")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -135,9 +175,23 @@ namespace TaskLabBackend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Provider")
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("TaskLabBackend.Models.TeamMember", b =>
+                {
+                    b.HasOne("TaskLabBackend.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }
