@@ -5,6 +5,7 @@ using System.Text;
 using TaskLabBackend.Db;
 using TaskLabBackend.Repositories;
 using TaskLabBackend.Services;
+using TaskLabBackend.Services.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +19,12 @@ builder.Services.AddScoped<IOtpService, OtpService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddDbContext<ApplicationDbContext>(options => 
     options.UseSqlServer(builder.Configuration.GetConnectionString("DbConn")));
+
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("Redis");
+    options.InstanceName = "Tasks";
+});
 
 builder.Services.AddAuthentication(options =>
 {
@@ -46,6 +53,7 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<JwtConfigure>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<ITeamMemberRepo, TeamMemberRepo>();
+builder.Services.AddScoped<IRedisCacheService, RedisCacheService>();
 
 var app = builder.Build();
 

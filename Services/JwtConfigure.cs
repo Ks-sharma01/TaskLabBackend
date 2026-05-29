@@ -70,9 +70,16 @@ namespace TaskLabBackend.Services
             return tokenHandler.WriteToken(tokenHandler.CreateToken(tokenDescriptor));
         }
 
-        public string GenerateRefreshToken()
+        public async Task<string> GenerateRefreshToken(int userId)
         {
-            return Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+            var refreshTokenExpiry = _configuration.GetValue<int>("JwtConfig:RefreshTokenDays");
+            var refreshToken = new RefreshToken
+            {
+                Token = Guid.NewGuid().ToString(),
+                Expiry = DateTime.UtcNow.AddMinutes(refreshTokenExpiry),
+                UserId = userId
+            };
+            return "";
         }
     }
 }

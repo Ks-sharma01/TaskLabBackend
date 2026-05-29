@@ -16,7 +16,7 @@ namespace TaskLabBackend.Repositories
             _context = context;
         }
 
-        public async  Task<IEnumerable<Models.Task>> GetAllTasks()
+        public async Task<IEnumerable<Models.Task>> GetAllTasks()
         {
             return await _context.Tasks.ToListAsync();
         }
@@ -30,11 +30,15 @@ namespace TaskLabBackend.Repositories
                 TaskDueDate = tasksDto.TaskDueDate,
                 TaskStatus = tasksDto.TaskStatus,
                 TaskRemarks = tasksDto.TaskRemarks,
-                TeamMember = 
+                CreatedOn = DateTime.UtcNow,
+                TeamMemberId = tasksDto.TeamMemberId,
+                
+                
+                //TeamMember = 
             };
-            _context.Tasks.Add(Task);
+           await _context.Tasks.AddAsync(Task);
            await _context.SaveChangesAsync();
-            return Task;
+           return Task;
           
         }
 
@@ -43,9 +47,9 @@ namespace TaskLabBackend.Repositories
             return await _context.Tasks.Where(x => x.Id == id).FirstOrDefaultAsync();
         }
 
-        public async Task<Models.Task> SearchTask(string keyword)
+        public async Task<List<Models.Task>> SearchTask(string keyword)
         {
-          return  await _context.Tasks.Where(x => x.TaskTitle.Contains(keyword)).FirstOrDefaultAsync();
+          return await _context.Tasks.Where(x => x.TaskTitle.Contains(keyword)).ToListAsync();
            
         }
 

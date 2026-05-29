@@ -4,20 +4,23 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaskLabBackend.Db;
 using TaskLabBackend.Dto;
+using TaskLabBackend.Models;
 using TaskLabBackend.Repositories;
+using TaskLabBackend.Services.Redis;
 
 namespace TaskLabBackend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class HomeController : ControllerBase
     {
         private readonly ITaskRepository _taskRepository;
-
-        public HomeController(ITaskRepository taskRepository)
+        private readonly IRedisCacheService _cache;
+        public HomeController(ITaskRepository taskRepository, IRedisCacheService cache)
         {
             _taskRepository = taskRepository;
+            _cache = cache;
         }
 
         [HttpGet("AllTasks")]
@@ -25,8 +28,14 @@ namespace TaskLabBackend.Controllers
         {
             try
             {
-               var task =  await _taskRepository.GetAllTasks();
-               return Ok(task);
+                var tasks = _cache.GetData<IEnumerable<TaskLabBackend.Models.Task>>("tasks");
+                if (tasks is not null)
+                {
+                    return Ok(tasks);
+                }
+                tasks =  await _taskRepository.GetAllTasks();
+                _cache.SetData("tasks", tasks);
+               return Ok(tasks);
 
             }
             catch (Exception ex)
@@ -37,11 +46,11 @@ namespace TaskLabBackend.Controllers
         }
 
         [HttpPost("AddTask")]
-        public  IActionResult AddTask([FromBody] TasksDto tasksDto)
+        public async Task<IActionResult> AddTask([FromBody] TasksDto tasksDto)
         {
             try
             {
-                var task = _taskRepository.AddTask(tasksDto);
+                var task = await _taskRepository.AddTask(tasksDto);
                 return Ok(task);
             }
             catch (Exception ex)
@@ -58,7 +67,14 @@ namespace TaskLabBackend.Controllers
         {
             try
             {
-              var task=  await _taskRepository.SearchTask(keyword);
+              var task = _cache.GetData<IEnumerable<TaskLabBackend.Models.Task>>("searchedtasks");
+                if(task is not null)
+                {
+                    return Ok(task);
+                }
+
+               task = await _taskRepository.SearchTask(keyword);
+               _cache.SetData("searchedtasks", task);
                 return Ok(task);
 
             }
@@ -101,8 +117,7 @@ namespace TaskLabBackend.Controllers
         public async Task<IActionResult> DeleteTask(int id)
         {
             try
-            {
-
+            { 
                var task = await _taskRepository.DeleteTask(id);
                 return Ok(task);
             }

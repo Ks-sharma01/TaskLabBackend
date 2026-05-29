@@ -12,5 +12,7 @@
 
         public string TaskRemarks { get; set; }
 
+        public int TeamMemberId { get; set; }
+
     }
 }

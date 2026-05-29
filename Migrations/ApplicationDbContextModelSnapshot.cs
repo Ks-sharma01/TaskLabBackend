@@ -108,7 +108,12 @@ namespace TaskLabBackend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("TeamMemberId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("TeamMemberId");
 
                     b.ToTable("Tasks");
                 });
@@ -178,6 +183,17 @@ namespace TaskLabBackend.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("TaskLabBackend.Models.Task", b =>
+                {
+                    b.HasOne("TaskLabBackend.Models.TeamMember", "TeamMember")
+                        .WithMany()
+                        .HasForeignKey("TeamMemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TeamMember");
                 });
 
             modelBuilder.Entity("TaskLabBackend.Models.TeamMember", b =>

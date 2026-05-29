@@ -69,37 +69,37 @@ namespace TaskLabBackend.Controllers
             return Ok(newUser);
         }
 
-        [HttpPost("refresh")]
-        public async Task<IActionResult> Refresh([FromBody] RefreshToken refreshToken)
-        {
-            var storedToken = await context.RefreshTokens.FirstOrDefaultAsync(x => x.Id == refreshToken.Id && !x.IsExpired);
+        //[HttpPost("refresh")]
+        //public async Task<IActionResult> Refresh([FromBody] RefreshToken refreshToken)
+        //{
+        //    var storedToken = await context.RefreshTokens.FirstOrDefaultAsync(x => x.Id == refreshToken.Id && !x.IsExpired);
 
-            var user = await context.Users.FindAsync(storedToken.UserId);
-            if(storedToken == null || storedToken.ExpiryDate < DateTime.UtcNow)
-            {
-                return Unauthorized();
-            }
-            storedToken.IsExpired = true;
+        //    var user = await context.Users.FindAsync(storedToken.UserId);
+        //    if(storedToken == null || storedToken.ExpiryDate < DateTime.UtcNow)
+        //    {
+        //        return Unauthorized();
+        //    }
+        //    storedToken.IsExpired = true;
 
-            var newAccessToken = jwtConfigure.GenerateAccessToken(user);
-            var newRefreshToken = jwtConfigure.GenerateRefreshToken();
+        //    var newAccessToken = jwtConfigure.GenerateAccessToken(user);
+        //    var newRefreshToken = jwtConfigure.GenerateRefreshToken();
 
-            context.RefreshTokens.Add(new RefreshToken
-            {
-                Token = newRefreshToken,
-                UserId = storedToken.UserId,
-                ExpiryDate = DateTime.UtcNow.AddDays(7)
+        //    context.RefreshTokens.Add(new RefreshToken
+        //    {
+        //        Token = newRefreshToken,
+        //        UserId = storedToken.UserId,
+        //        ExpiryDate = DateTime.UtcNow.AddDays(7)
 
-            });
+        //    });
 
-            await context.SaveChangesAsync();
+        //    await context.SaveChangesAsync();
 
-            return Ok(new
-            {
-                AccessToken = newAccessToken,
-                RefreshToken = newRefreshToken,
-            });
-        }
+        //    return Ok(new
+        //    {
+        //        AccessToken = newAccessToken,
+        //        RefreshToken = newRefreshToken,
+        //    });
+        //}
 
         [AllowAnonymous]
         [HttpPost("send-otp")]

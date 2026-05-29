@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TaskLabBackend.Models
 {
@@ -21,9 +22,12 @@ namespace TaskLabBackend.Models
 
         public string? TaskRemarks { get; set; }
 
-       
+       public int TeamMemberId { get; set; }
 
-        public DateTime CreatedOn { get; set; } = DateTime.Now;
+        [ForeignKey("TeamMemberId")]
+        public TeamMember TeamMember { get; set; }
+
+        public DateTime CreatedOn { get; set; }
 
 
     }
