@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using TaskLabBackend.Db;
@@ -34,6 +35,7 @@ namespace TaskLabBackend.Controllers
         }
 
         [AllowAnonymous]
+        [EnableRateLimiting("login-policy")]
         [HttpPost("login")]
         public async Task<ActionResult<LoginResponseModel>> Login([FromBody] LoginRequestModel loginRequest)
         {

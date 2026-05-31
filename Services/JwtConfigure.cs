@@ -76,7 +76,7 @@ namespace TaskLabBackend.Services
             var refreshToken = new RefreshToken
             {
                 Token = Guid.NewGuid().ToString(),
-                Expiry = DateTime.UtcNow.AddMinutes(refreshTokenExpiry),
+                ExpiryTime = DateTime.UtcNow.AddMinutes(refreshTokenExpiry),
                 UserId = userId
             };
             return "";

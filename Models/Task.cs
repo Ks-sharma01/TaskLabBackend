@@ -29,7 +29,6 @@ namespace TaskLabBackend.Models
 
         public DateTime CreatedOn { get; set; }
 
-
     }
 
   

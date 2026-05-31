@@ -12,8 +12,8 @@ using TaskLabBackend.Db;
 namespace TaskLabBackend.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260509115951_InitialMigration")]
-    partial class InitialMigration
+    [Migration("20260529110019_RefreshTokenModelAdded")]
+    partial class RefreshTokenModelAdded
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -33,7 +33,7 @@ namespace TaskLabBackend.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("ExpiryDate")
+                    b.Property<DateTime>("ExpiryTime")
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsExpired")
@@ -41,13 +41,15 @@ namespace TaskLabBackend.Migrations
 
                     b.Property<string>("Token")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("RefreshTokens");
                 });
@@ -186,6 +188,17 @@ namespace TaskLabBackend.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("TaskLabBackend.Models.Api.RefreshToken", b =>
+                {
+                    b.HasOne("TaskLabBackend.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("TaskLabBackend.Models.Task", b =>

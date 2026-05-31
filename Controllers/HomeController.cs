@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using TaskLabBackend.Db;
 using TaskLabBackend.Dto;
@@ -12,7 +13,8 @@ namespace TaskLabBackend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize]
+    [Authorize]
+    [EnableRateLimiting("SlidingWindowPolicy")]
     public class HomeController : ControllerBase
     {
         private readonly ITaskRepository _taskRepository;
@@ -22,7 +24,6 @@ namespace TaskLabBackend.Controllers
             _taskRepository = taskRepository;
             _cache = cache;
         }
-
         [HttpGet("AllTasks")]
         public async Task<IActionResult> GetAllTasks()
         {
